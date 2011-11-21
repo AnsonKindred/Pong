@@ -1,0 +1,33 @@
+.body {
+	width: 100%;
+	height: 100%;
+}
+
+label {
+	margin-right: 7px;
+}
+
+.canvas {
+	width: 800px;
+	height: 600px;
+	margin: 0px auto;
+	position: relative;
+}
+
+.main-title {
+	width: 800px;
+	height: 000px;
+	margin: 0px auto;
+	top: -600px;
+	position: relative;
+	color: white;
+	text-align: center;
+	}
+
+	.main-title h1 {
+		font-size: 40pt;
+	}
+
+	.author {
+		margin-bottom: 100px;
+	}
