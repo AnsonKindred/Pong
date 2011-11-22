@@ -2,4 +2,11 @@ Pong
 by Zeb Long
 Project started Nov 2011
 
-Probably some meaningful info here eventually.
+[server dependencies]
+linux
+nodejs
+ - npm (node package manager)
+ - socket.io
+
+visiting index.php in a browser kicks off the client
+the server is started with nodejs: nodejs server.js
