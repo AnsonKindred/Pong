@@ -1,28 +1,27 @@
 Paddle = function(side)
 {
 	this.side = side;
-	this.px = 0;
-	this.py = 0;
-	this.lastPaddleSend = 0;
-	this.name = "";
-	this.socket = null;
+	this.x  = 0;
+	this.y  = 0;
+	this.vx = 0;
+	this.vy = 0;
+	this.isPlayer = false;
 
 	if(this.side == 'left')
 	{
-		this.px = -Paddle.DISTANCE_FROM_CENTER;
+		this.x = -Paddle.DISTANCE_FROM_CENTER;
 	}
 	else
 	{
-		this.px = Paddle.DISTANCE_FROM_CENTER;
+		this.x = Paddle.DISTANCE_FROM_CENTER;
 	}
 	
-	// considered making this static but there's only 2 of them
-	// and I may want to play with their vertices seperately
 	this.paddleBuffer = null;
 
 	this.moveSpeed = .01;
 	this.moveUp    = false;
 	this.moveDown  = false;
+	this.lastMoveState = 0;
 
 	this.init = function(gl)
 	{
@@ -38,32 +37,65 @@ Paddle = function(side)
 
 	this.draw = function(gl)
 	{
-		drawBufferAtMode(this.paddleBuffer, this.px, this.py, 0.0, gl.TRIANGLE_STRIP);
+		drawBufferAtMode(this.paddleBuffer, this.x, this.y, 0.0, gl.TRIANGLE_STRIP);
 	}
 
 	this.update = function(deltaTime)
 	{
-		if(this.moveUp)
-		{
-			this.py += this.moveSpeed*deltaTime;
-		}
-
-		if(this.moveDown)
-		{
-			this.py -= this.moveSpeed*deltaTime;
-		}
-
-		if(this.moveUp || this.moveDown)
-		{
-			var deltaSend = time() - this.lastPaddleSend;
-			if(this.lastPaddleSend == 0 || deltaSend > 5)
-			{
-				PongClient.SERVER.emit('movePaddle', this.py);
-				this.lastPaddleSend = time();
-			}
-		}
+		this.y += this.vy*deltaTime;
 	}
 
+	this.keyDown = function(e, key)
+	{
+		this.moveUp   = (key == "W" || e.keyCode == 38) ? true : PongClient.myPaddle.moveUp;
+		this.moveDown = (key == "S" || e.keyCode == 40) ? true : PongClient.myPaddle.moveDown;
+		if((this.moveUp && this.moveDown) || (!this.moveUp && !this.moveDown))
+		{
+			this.vy = 0;
+		}
+		else if(this.moveUp)
+		{
+			this.vy = this.moveSpeed;
+		}
+		else //if(this.moveDown)
+		{
+			this.vy = -this.moveSpeed
+		}
+		PongClient.SERVER.emit(
+				'movePaddle',
+				{
+					y: this.y,
+					vy: this.vy,
+					moveSpeed: this.moveSpeed
+				}
+			);
+	}
+
+	this.keyUp = function(e, key)
+	{
+		this.moveUp   = (key == "W" || e.keyCode == 38) ? false : PongClient.myPaddle.moveUp;
+		this.moveDown = (key == "S" || e.keyCode == 40) ? false : PongClient.myPaddle.moveDown;
+		if((this.moveUp && this.moveDown) || (!this.moveUp && !this.moveDown))
+		{
+			this.vy = 0;
+		}
+		else if(this.moveUp)
+		{
+			this.vy = this.moveSpeed;
+		}
+		else //if(this.moveDown)
+		{
+			this.vy = -this.moveSpeed
+		}
+		PongClient.SERVER.emit(
+				'movePaddle',
+				{
+					y: this.y,
+					vy: this.vy,
+					moveSpeed: this.moveSpeed
+				}
+			);
+	}
 }
 
 Paddle.HEIGHT = 1.0;

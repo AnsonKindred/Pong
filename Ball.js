@@ -1,11 +1,11 @@
-Ball = function(px, py, vx, vy)
+Ball = function(x, y, vx, vy)
 {
 	this.circleBuffer = null;
 
 	this.vx = vx
 	this.vy = vy;
-	this.px = px;
-	this.py = py;
+	this.x = x;
+	this.y = y;
 
 	this.init = function(gl)
 	{
@@ -26,13 +26,13 @@ Ball = function(px, py, vx, vy)
 
 	this.draw = function(gl)
 	{
-		drawBufferAtMode(this.circleBuffer, this.px, this.py, 0.0, gl.LINE_LOOP);
+		drawBufferAtMode(this.circleBuffer, this.x, this.y, 0.0, gl.LINE_LOOP);
 	}
 
 	this.update = function(deltaTime)
 	{
-		this.px += this.vx*deltaTime;
-		this.py += this.vy*deltaTime;
+		this.x += this.vx*deltaTime;
+		this.y += this.vy*deltaTime;
 	}
 
 }

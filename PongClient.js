@@ -51,19 +51,22 @@ PongClient.setPaddle = function(side)
 		PongClient.myPaddle = PongClient.rightPaddle;
 		PongClient.enemyPaddle = PongClient.leftPaddle;
 	}
+	PongClient.myPaddle.isPlayer = true;
 }
 
-PongClient.enemyMoved = function(position)
+PongClient.enemyMoved = function(moveState)
 {
-	PongClient.enemyPaddle.py = position;
+	PongClient.enemyPaddle.py = moveState.y;
+	PongClient.enemyPaddle.vy = moveState.vy;
+	PongClient.enemyPaddle.moveSpeed = moveState.moveSpeed;
 }
 
 PongClient.sync = function(data)
 {
 	PongClient.gameStarted = true;
 	PongClient.lastTime = time();
-	PongClient.ball.px = data.x;
-	PongClient.ball.py = data.y;
+	PongClient.ball.x = data.x;
+	PongClient.ball.y = data.y;
 	PongClient.ball.vx = data.vx;
 	PongClient.ball.vy = data.vy;
 }
@@ -87,42 +90,42 @@ PongClient.update = function()
 	PongClient.leftPaddle.update(deltaTime);
 	PongClient.rightPaddle.update(deltaTime);
 
-	/*if(PongClient.ball.px > PongClient.X_BOUND) {
-		PongClient.ball.px = PongClient.X_BOUND;
+	/*if(PongClient.ball.x > PongClient.X_BOUND) {
+		PongClient.ball.x = PongClient.X_BOUND;
 		PongClient.ball.vx *= -1;
 	}
-	if(PongClient.ball.px < -PongClient.X_BOUND) {
-		PongClient.ball.px = -PongClient.X_BOUND;
+	if(PongClient.ball.x < -PongClient.X_BOUND) {
+		PongClient.ball.x = -PongClient.X_BOUND;
 		PongClient.ball.vx *= -1;
 	}
-	if(PongClient.ball.py > PongClient.Y_BOUND) {
-		PongClient.ball.py = PongClient.Y_BOUND;
+	if(PongClient.ball.y > PongClient.Y_BOUND) {
+		PongClient.ball.y = PongClient.Y_BOUND;
 		PongClient.ball.vy *= -1;
 	}
-	if(PongClient.ball.py < -PongClient.Y_BOUND) {
-		PongClient.ball.py = -PongClient.Y_BOUND;
+	if(PongClient.ball.y < -PongClient.Y_BOUND) {
+		PongClient.ball.y = -PongClient.Y_BOUND;
 		PongClient.ball.vy *= -1;
 	}
 
 	var top = 0;
 	var bottom = 0;
-	if(PongClient.ball.px > PongClient.EDGE_OF_FIELD)
+	if(PongClient.ball.x > PongClient.EDGE_OF_FIELD)
 	{
-		top    = PongClient.rightPaddle.py - Paddle.HALF_HEIGHT;
-		bottom = PongClient.rightPaddle.py + Paddle.HALF_HEIGHT;
-		if(PongClient.ball.py > top && PongClient.ball.py < bottom) {
+		top    = PongClient.rightPaddle.y - Paddle.HALF_HEIGHT;
+		bottom = PongClient.rightPaddle.y + Paddle.HALF_HEIGHT;
+		if(PongClient.ball.y > top && PongClient.ball.y < bottom) {
 			PongClient.ball.vx *= -1;
-			PongClient.ball.px = PongClient.EDGE_OF_FIELD;
+			PongClient.ball.x = PongClient.EDGE_OF_FIELD;
 		}
 	}
 
-	if(PongClient.ball.px < -PongClient.EDGE_OF_FIELD)
+	if(PongClient.ball.x < -PongClient.EDGE_OF_FIELD)
 	{
-		top    = PongClient.leftPaddle.py - Paddle.HALF_HEIGHT;
-		bottom = PongClient.leftPaddle.py + Paddle.HALF_HEIGHT;
-		if(PongClient.ball.py > top && PongClient.ball.py < bottom) {
+		top    = PongClient.leftPaddle.y - Paddle.HALF_HEIGHT;
+		bottom = PongClient.leftPaddle.y + Paddle.HALF_HEIGHT;
+		if(PongClient.ball.y > top && PongClient.ball.y < bottom) {
 			PongClient.ball.vx *= -1;
-			PongClient.ball.px = -PongClient.EDGE_OF_FIELD;
+			PongClient.ball.x = -PongClient.EDGE_OF_FIELD;
 		}
 	}*/
 }
@@ -130,15 +133,13 @@ PongClient.update = function()
 PongClient.keyDown = function(e, key)
 {
 	if(!PongClient.gameStarted) return;
-	PongClient.myPaddle.moveUp   = (key == "W" || e.keyCode == 38) ? true : PongClient.myPaddle.moveUp;
-	PongClient.myPaddle.moveDown = (key == "S" || e.keyCode == 40) ? true : PongClient.myPaddle.moveDown;
+	PongClient.myPaddle.keyDown(e, key);
 }
 
 PongClient.keyUp = function(e, key)
 {
 	if(!PongClient.gameStarted) return;
-	PongClient.myPaddle.moveUp   = (key == "W" || e.keyCode == 38) ? false : PongClient.myPaddle.moveUp;
-	PongClient.myPaddle.moveDown = (key == "S" || e.keyCode == 40) ? false : PongClient.myPaddle.moveDown
+	PongClient.myPaddle.keyUp(e, key);
 }
 
 PongClient.SERVER = io.connect('http://50.57.111.104:8082');
