@@ -4,63 +4,85 @@ require('./PongServer.js');
 require('./Paddle.js');
 require('./Ball.js');
 require('./Player.js');
+require('./GLOBALS.js');
 
-// I use way too many globals here of course
+Server = function(){}
 
-var games = [];
-var players = [];
-var friendly_client_list = [];
-var friendly_game_list = [];
-var listsNeedUpdate = false;
+Server.games = [];
+Server.players = [];
+Server.friendly_client_list = [];
+Server.friendly_game_list = [];
+Server.listsNeedUpdate = false;
 
-io.sockets.on('connection', function (socket) 
+//setInterval(updateGameLists, 1500);
+
+Server.newClient = function(socket)
 {
 	var player = new Player(socket);
-	players.push(player);
-	listsNeedUpdate = true;
+	Server.players.push(player);
+	Server.listsNeedUpdate = true;
 
 	socket.on('setName', function(name) {
 		player.name = name;
-		listsNeedUpdate = true;
+		Server.listsNeedUpdate = true;
 	});
-	
-	/*if(clientID%2 == 0)
+
+	if(Server.players.length%2 == 1)
 	{
-		games[gameCount] = new PongServer();
-		games[gameCount].setLeftPaddleSocket(socket);
+		var game = new PongServer();
+		Server.games.push(game);
+		Server.games[Server.games.length-1].setLeftPlayer(player);
 	}
 	else
 	{
-		games[gameCount].setRightPaddleSocket(socket);
-		gameCount++;
-	}*/
-});
-
-setInterval(updateGameLists, 1500);
-
-function updateGameLists()
-{
-	if(!listsNeedUpdate) return;
-	
-	for(var i in players)
-	{
-		if(!players[i].isPlaying) {
-			players[i].socket.emit('updateGameList', serialize({users: players, games: friendly_game_list}));
-		}
+		Server.games[Server.games.length-1].setRightPlayer(player);
+		Server.games[Server.games.length-1].start();
 	}
-	listsNeedUpdate = false;
+
+	socket.on('disconnect', function(){
+		player.disconnect();
+	});
 }
 
-function serialize(data) {
+Server.gameEnded = function(game)
+{
+	var index = Server.games.indexOf(game);
+	Server.games.splice(index, 1);
+}
+
+Server.updateGameLists = function()
+{
+	if(!Server.listsNeedUpdate) return;
+
+	for(var i in Server.players)
+	{
+		if(!Server.players[i].isPlaying)
+		{
+			Server.players[i].socket.emit(
+					'updateGameList',
+					Server.serialize({
+						users: Server.players,
+						games: Server.friendly_game_list
+					})
+				);
+		}
+	}
+	Server.listsNeedUpdate = false;
+}
+
+Server.serialize = function(data)
+{
 	var encoded = {};
 	if(data.hasOwnProperty('serialize')) {
 		encoded = data.serialize();
 	}
 	else {
 		for(var i in data) {
-			encoded[i] = serialize(data[i]);
+			encoded[i] = Server.serialize(data[i]);
 		}
 	}
 
 	return encoded;
 }
+
+io.sockets.on('connection', Server.newClient);

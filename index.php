@@ -26,14 +26,12 @@
 
 		<script type="text/javascript" src="http://50.57.111.104:8082/socket.io/socket.io.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js" type="text/javascript"></script>
-		<script type="text/javascript" src="include.js"></script>
 		<script type="text/javascript" src="lib/webgl-util.js"></script>
 		<script type="text/javascript" src="lib/glMatrix.js"></script>
 		<script type="text/javascript" src="Ball.js"></script>
 		<script type="text/javascript" src="Paddle.js"></script>
-		<script type="text/javascript" src="base/Object.js"></script>
-		<script type="text/javascript" src="base/PongController.js"></script>
-		<script type="text/javascript" src="client/PongClient.js"></script>
+		<script type="text/javascript" src="GLOBALS.js"></script>
+		<script type="text/javascript" src="PongClient.js"></script>
 		<script type="text/javascript" src="glInit.js"></script>
 
 		<link rel="stylesheet" type="text/css" href="css/main.css" />
@@ -45,9 +43,9 @@
 		</div>
 		<div class="main-title">
 			<h1>pong</h1>
-			<div class="author">by<br/>Zeb Long</div>
+			<!--div class="author">by<br/>Zeb Long</div>
 			<label for="username">Name</label>
-			<input class="username" name="username" />
+			<input class="username" name="username" /-->
 		</div>
 		<div class="users">
 

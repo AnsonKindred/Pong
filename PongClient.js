@@ -1,9 +1,5 @@
 PongClient = function() {}
 
-PongClient.X_BOUND = 3.8;
-PongClient.Y_BOUND = 2.8;
-PongClient.EDGE_OF_FIELD = Paddle.DISTANCE_FROM_CENTER - Paddle.HALF_WIDTH - Ball.RADIUS;
-
 PongClient.ball = null;
 PongClient.myPaddle = null;
 PongClient.enemyPaddle = null;
@@ -36,7 +32,7 @@ PongClient.userSetName = function(event)
 
 PongClient.updateGameList = function(lists)
 {
-	console.log(lists);
+	//console.log(lists);
 	$('div.users').empty();
 	for(var i in lists.users) {
 		$('div.users').append("<div>"+lists.users[i].name+"</div>");

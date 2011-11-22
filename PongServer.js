@@ -1,9 +1,5 @@
 PongServer = function()
 {
-	this.X_BOUND = 3.8;
-	this.Y_BOUND = 2.8;
-	
-	this.EDGE_OF_FIELD = Paddle.DISTANCE_FROM_CENTER - Paddle.HALF_WIDTH - Ball.RADIUS;
 	this.leftPaddleSocket = null;
 	this.rightPaddleSocket = null;
 	this.hasStarted = false;
@@ -16,29 +12,31 @@ PongServer = function()
 
 	this.gameThreadID = null;
 
-	this.setLeftPaddleSocket = function(socket)
+	this.setLeftPlayer = function(player)
 	{
-		this.leftPaddleSocket = socket;
-		this.leftPaddleSocket.emit('setPaddle', 'left');
-		this.leftPaddleSocket.on('movePaddle', this.moveLeftPaddle.bind(this));
+		this.leftPlayer = player;
+		this.leftPlayer.currentGame = this;
+		this.leftPlayer.socket.emit('setPaddle', 'left');
+		this.leftPlayer.socket.on('movePaddle', this.moveLeftPaddle.bind(this));
 	}
 
-	this.setRightPaddleSocket = function(socket)
+	this.setRightPlayer = function(player)
 	{
-		this.rightPaddleSocket = socket;
-		this.rightPaddleSocket.emit('setPaddle', 'right');
-		this.rightPaddleSocket.on('movePaddle', this.moveRightPaddle.bind(this));
+		this.rightPlayer = player;
+		this.rightPlayer.currentGame = this;
+		this.rightPlayer.socket.emit('setPaddle', 'right');
+		this.rightPlayer.socket.on('movePaddle', this.moveRightPaddle.bind(this));
 	}
 
 	this.moveLeftPaddle = function(position)
 	{
-		this.rightPaddleSocket.emit('enemyMoved', position);
+		this.rightPlayer.socket.emit('enemyMoved', position);
 		this.leftPaddle.py = position;
 	}
 
 	this.moveRightPaddle = function(position)
 	{
-		this.leftPaddleSocket.emit('enemyMoved', position);
+		this.leftPlayer.socket.emit('enemyMoved', position);
 		this.rightPaddle.py = position;
 	}
 
@@ -53,25 +51,36 @@ PongServer = function()
 			vy: this.ball.vy
 		}
 		this.lastTime = PongServer.time();
-		this.leftPaddleSocket.emit('sync', syncData);
-		this.rightPaddleSocket.emit('sync', syncData);
+		this.leftPlayer.socket.emit('sync', syncData);
+		this.rightPlayer.socket.emit('sync', syncData);
 	}
 
 	this.start = function()
 	{
-		this.gameThreadID = setInterval(this.update.bind(this), 20);
+		this.gameThreadID = setInterval(this.update.bind(this), GLOBAL.SIMULATION_RATE);
+		this.hasStarted = true;
 	}
 
 	this.stop = function()
 	{
 		clearInterval(this.gameThreadID);
+		Server.gameEnded(this);
+		this.leftPlayer.currentGame = null;
+		this.rightPlayer.currentGame = null;
+	}
+
+	this.playerDisconnected = function(player)
+	{
+		// for now just going to stop the game, but I imagine
+		// at some point this could be handled better
+		this.stop();
 	}
 
 	this.update = function()
 	{
 		if(!this.hasStarted)
 		{
-			if(this.leftPaddleSocket !== null && this.rightPaddleSocket !== null)
+			if(this.leftPlayer !== null && this.rightPlayer !== null)
 			{
 				this.lastTime = PongServer.time();
 				this.hasStarted = true;
@@ -85,47 +94,47 @@ PongServer = function()
 		
 		this.ball.update(deltaTime);
 		var doSync = false;
-		if(this.ball.px > this.X_BOUND) {
-			this.ball.px = this.X_BOUND;
+		if(this.ball.px > GLOBAL.X_BOUND) {
+			this.ball.px = GLOBAL.X_BOUND;
 			this.ball.vx *= -1;
 			doSync = true;
 		}
-		if(this.ball.px < -this.X_BOUND) {
-			this.ball.px = -this.X_BOUND;
+		if(this.ball.px < -GLOBAL.X_BOUND) {
+			this.ball.px = -GLOBAL.X_BOUND;
 			this.ball.vx *= -1;
 			doSync = true;
 		}
-		if(this.ball.py > this.Y_BOUND) {
-			this.ball.py = this.Y_BOUND;
+		if(this.ball.py > GLOBAL.Y_BOUND) {
+			this.ball.py = GLOBAL.Y_BOUND;
 			this.ball.vy *= -1;
 			doSync = true;
 		}
-		if(this.ball.py < -this.Y_BOUND) {
-			this.ball.py = -this.Y_BOUND;
+		if(this.ball.py < -GLOBAL.Y_BOUND) {
+			this.ball.py = -GLOBAL.Y_BOUND;
 			this.ball.vy *= -1;
 			doSync = true;
 		}
 
 		var top = 0;
 		var bottom = 0;
-		if(this.ball.px > this.EDGE_OF_FIELD)
+		if(this.ball.px > GLOBAL.EDGE_OF_FIELD)
 		{
 			top    = this.rightPaddle.py - Paddle.HALF_HEIGHT;
 			bottom = this.rightPaddle.py + Paddle.HALF_HEIGHT;
 			if(this.ball.py > top && this.ball.py < bottom) {
 				this.ball.vx *= -1;
-				this.ball.px = this.EDGE_OF_FIELD;
+				this.ball.px = GLOBAL.EDGE_OF_FIELD;
 			}
 			doSync = true;
 		}
 
-		if(this.ball.px < -this.EDGE_OF_FIELD)
+		if(this.ball.px < -GLOBAL.EDGE_OF_FIELD)
 		{
 			top    = this.leftPaddle.py - Paddle.HALF_HEIGHT;
 			bottom = this.leftPaddle.py + Paddle.HALF_HEIGHT;
 			if(this.ball.py > top && this.ball.py < bottom) {
 				this.ball.vx *= -1;
-				this.ball.px = -this.EDGE_OF_FIELD;
+				this.ball.px = -GLOBAL.EDGE_OF_FIELD;
 			}
 			doSync = true;
 		}
