@@ -1,6 +1,6 @@
 PongClient = function() {}
 
-PongClient.ball = null;
+PongClient.ball = new Ball(0, 0, 0, 0);
 PongClient.myPaddle = null;
 PongClient.enemyPaddle = null;
 PongClient.leftPaddle = null;
@@ -8,10 +8,11 @@ PongClient.rightPaddle = null;
 
 PongClient.lastTime = 0;
 PongClient.gameStarted = false;
+PongClient.gameStartTime = 0;
+PongClient.stupidSyncCount = 0;
 
 PongClient.init = function(gl)
 {
-	PongClient.ball = new Ball(0, 0, 0, 0);
 	PongClient.ball.init(gl);
 
 	PongClient.leftPaddle  = new Paddle('left');
@@ -56,19 +57,41 @@ PongClient.setPaddle = function(side)
 
 PongClient.enemyMoved = function(moveState)
 {
-	PongClient.enemyPaddle.py = moveState.y;
+	PongClient.enemyPaddle.y = moveState.y;
 	PongClient.enemyPaddle.vy = moveState.vy;
 	PongClient.enemyPaddle.moveSpeed = moveState.moveSpeed;
 }
 
-PongClient.sync = function(data)
+PongClient.start = function(data)
 {
-	PongClient.gameStarted = true;
-	PongClient.lastTime = time();
-	PongClient.ball.x = data.x;
-	PongClient.ball.y = data.y;
 	PongClient.ball.vx = data.vx;
 	PongClient.ball.vy = data.vy;
+
+	PongClient.gameStartTime = time();
+	PongClient.gameStarted = true;
+	PongClient.lastTime = time();
+}
+
+PongClient.sync = function()
+{
+	if(!PongClient.gameStarted) return;
+	var gameTime = time() - PongClient.gameStartTime;
+	var syncData = {
+		x: PongClient.ball.x,
+		y: PongClient.ball.y,
+		vx: PongClient.ball.vx,
+		vy: PongClient.ball.vy,
+		time: gameTime
+	}
+
+	PongClient.SERVER.emit('sync', syncData);
+}
+
+PongClient.errorCorrect = function(data)
+{
+	var gameTime = time() - PongClient.gameStartTime;
+	if(gameTime-data.time < 20)
+		PongClient.ball.setParams(Ball.calculatePosition(data, gameTime-data.time));
 }
 
 PongClient.draw = function(gl)
@@ -89,45 +112,15 @@ PongClient.update = function()
 	PongClient.ball.update(deltaTime);
 	PongClient.leftPaddle.update(deltaTime);
 	PongClient.rightPaddle.update(deltaTime);
+	PongClient.stupidSyncCount++;
 
-	/*if(PongClient.ball.x > PongClient.X_BOUND) {
-		PongClient.ball.x = PongClient.X_BOUND;
-		PongClient.ball.vx *= -1;
-	}
-	if(PongClient.ball.x < -PongClient.X_BOUND) {
-		PongClient.ball.x = -PongClient.X_BOUND;
-		PongClient.ball.vx *= -1;
-	}
-	if(PongClient.ball.y > PongClient.Y_BOUND) {
-		PongClient.ball.y = PongClient.Y_BOUND;
-		PongClient.ball.vy *= -1;
-	}
-	if(PongClient.ball.y < -PongClient.Y_BOUND) {
-		PongClient.ball.y = -PongClient.Y_BOUND;
-		PongClient.ball.vy *= -1;
-	}
-
-	var top = 0;
-	var bottom = 0;
-	if(PongClient.ball.x > PongClient.EDGE_OF_FIELD)
+	// Whichever side the ball is on is the master
+	if(((PongClient.myPaddle.side == 'left' && PongClient.ball.x < 0) ||
+		(PongClient.myPaddle.side == 'right' && PongClient.ball.x > 0)) && PongClient.stupidSyncCount >= 20)
 	{
-		top    = PongClient.rightPaddle.y - Paddle.HALF_HEIGHT;
-		bottom = PongClient.rightPaddle.y + Paddle.HALF_HEIGHT;
-		if(PongClient.ball.y > top && PongClient.ball.y < bottom) {
-			PongClient.ball.vx *= -1;
-			PongClient.ball.x = PongClient.EDGE_OF_FIELD;
-		}
+		PongClient.sync();
+		PongClient.stupidSyncCount = 0;
 	}
-
-	if(PongClient.ball.x < -PongClient.EDGE_OF_FIELD)
-	{
-		top    = PongClient.leftPaddle.y - Paddle.HALF_HEIGHT;
-		bottom = PongClient.leftPaddle.y + Paddle.HALF_HEIGHT;
-		if(PongClient.ball.y > top && PongClient.ball.y < bottom) {
-			PongClient.ball.vx *= -1;
-			PongClient.ball.x = -PongClient.EDGE_OF_FIELD;
-		}
-	}*/
 }
 
 PongClient.keyDown = function(e, key)
@@ -147,3 +140,5 @@ PongClient.SERVER.on('updateGameList', PongClient.updateGameList);
 PongClient.SERVER.on('setPaddle', PongClient.setPaddle);
 PongClient.SERVER.on('enemyMoved', PongClient.enemyMoved);
 PongClient.SERVER.on('sync', PongClient.sync);
+PongClient.SERVER.on('start', PongClient.start);
+PongClient.SERVER.on('errorCorrect', PongClient.errorCorrect);

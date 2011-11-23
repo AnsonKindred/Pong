@@ -31,8 +31,22 @@ Ball = function(x, y, vx, vy)
 
 	this.update = function(deltaTime)
 	{
-		this.x += this.vx*deltaTime;
-		this.y += this.vy*deltaTime;
+		//this.x += this.vx*deltaTime;
+		//this.y += this.vy*deltaTime;
+		var nextPos = Ball.calculatePosition(this, deltaTime);
+		this.x = nextPos.x;
+		this.y = nextPos.y;
+		this.vx = nextPos.vx;
+		this.vy = nextPos.vy;
+		this.didCollide = nextPos.didCollide;
+	}
+
+	this.setParams = function(data)
+	{
+		this.x = data.x;
+		this.y = data.y;
+		this.vx = data.vx;
+		this.vy = data.vy;
 	}
 
 }
@@ -40,3 +54,93 @@ Ball = function(x, y, vx, vy)
 Ball.RADIUS = .07;
 Ball.SIDES  = 10.0;
 Ball.STEP   = 2*Math.PI / Ball.SIDES;
+
+Ball.predict = function(data, time)
+{
+	if(time > 0)
+	{
+		return {
+			x: data.x + data.vx*time,
+			y: data.y + data.vy*time,
+			vx: data.vx,
+			vy: data.vy
+		};
+	}
+	else
+	{
+		return data;
+	}
+}
+
+
+Ball.calculatePosition = function(ball, time)
+{
+	if(time > 50) {
+		console.log("just checking");
+		time = 50;
+	}
+	var data = {
+			x: ball.x,
+			y: ball.y,
+			vx: ball.vx,
+			vy: ball.vy
+		}
+	if(time <= 0) return data;
+	for(var i = 0; i < time; i++)
+	{
+		data.x += data.vx;
+		data.y += data.vy;
+	}
+
+	data.didCollide = false;
+	if(data.x > GLOBAL.X_BOUND)
+	{
+		data.x = GLOBAL.X_BOUND;
+		data.vx *= -1;
+		data.didCollide = true;
+	}
+	if(data.x < -GLOBAL.X_BOUND)
+	{
+		data.x = -GLOBAL.X_BOUND;
+		data.vx *= -1;
+		data.didCollide = true;
+	}
+	if(data.y > GLOBAL.Y_BOUND)
+	{
+		data.y = GLOBAL.Y_BOUND;
+		data.vy *= -1;
+		data.didCollide = true;
+	}
+	if(data.y < -GLOBAL.Y_BOUND)
+	{
+		data.y = -GLOBAL.Y_BOUND;
+		data.vy *= -1;
+		data.didCollide = true;
+	}
+
+	var top = 0;
+	var bottom = 0;
+	if(data.x > GLOBAL.EDGE_OF_FIELD)
+	{
+		top    = PongClient.rightPaddle.y - Paddle.HALF_HEIGHT;
+		bottom = PongClient.rightPaddle.y + Paddle.HALF_HEIGHT;
+		if(data.y > top && data.y < bottom) {
+			data.vx *= -1;
+			data.x = GLOBAL.EDGE_OF_FIELD;
+			data.didCollide = true;
+		}
+	}
+
+	if(data.x < -GLOBAL.EDGE_OF_FIELD)
+	{
+		top    = PongClient.leftPaddle.y - Paddle.HALF_HEIGHT;
+		bottom = PongClient.leftPaddle.y + Paddle.HALF_HEIGHT;
+		if(data.y > top && data.y < bottom) {
+			data.vx *= -1;
+			data.x = -GLOBAL.EDGE_OF_FIELD;
+			data.didCollide = true;
+		}
+	}
+
+	return data;
+}
